@@ -1,4 +1,4 @@
-__version__ = "1.0"
+__version__ = "1.1"
 
 from pathlib import Path
 from meshroom.core import desc
@@ -42,6 +42,14 @@ class LomaFeatureExtraction(desc.CommandLineNode):
             description="Number of keypoints detected per image.",
             value=2048,
             range=(256, 16384, 256),
+        ),
+        desc.IntParam(
+            name="detectorResolution",
+            label="Detector Resolution",
+            description="Size of the longest side of the image used by the keypoint detector (rounded down to a multiple of 8).\n"
+                        "Higher values give more accurate keypoints at a higher GPU memory cost. Descriptors are always computed at 784x784.",
+            value=1024,
+            range=(512, 8192, 256),
         ),
     ]
 

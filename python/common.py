@@ -88,10 +88,15 @@ def pil_to_tensor(pil_im):
     array = np.array(pil_im) / 255.0
     return torch.from_numpy(array).permute(2, 0, 1).float().to(device)[None]
 
-def prepare_images(pil_im, model):
+def prepare_images(pil_im, model, detectorResolution):
     """
     Replicate the preprocessing done by LoMa when given an image path
     (the tensor API of LoMa does not resize the images).
+
+    Parameters:
+    pil_im : the input image
+    model : the LoMa model
+    detectorResolution : size of the longest side of the detector image
 
     Returns:
     (detector image tensor, descriptor image tensor)
@@ -100,11 +105,11 @@ def prepare_images(pil_im, model):
     W, H = pil_im.size
 
     if detector.keep_aspect_ratio:
-        scale = detector.resize / max(W, H)
+        scale = detectorResolution / max(W, H)
         dw = int((scale * W) // 8 * 8)
         dh = int((scale * H) // 8 * 8)
     else:
-        dw, dh = detector.resize, detector.resize
+        dw, dh = detectorResolution, detectorResolution
 
     detectorImage = pil_to_tensor(pil_im.resize((dw, dh)))
     descriptorImage = pil_to_tensor(pil_im.resize((DESCRIPTOR_SIZE, DESCRIPTOR_SIZE)))

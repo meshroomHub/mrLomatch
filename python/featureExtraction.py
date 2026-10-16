@@ -25,7 +25,7 @@ def save_features(outputFolder, viewId, pixelCoords):
 
     regions.Save(f"{outputFolder}/{viewId}.roma.feat", f"{outputFolder}/{viewId}.roma.desc")
 
-def compute_features(inputSfMData, modelName, numKeypoints, outputFolder, rangeIteration, rangeBlocksCount):
+def compute_features(inputSfMData, modelName, numKeypoints, detectorResolution, outputFolder, rangeIteration, rangeBlocksCount):
     """
     Detect and describe LoMa keypoints for each view of the sfmData.
 
@@ -38,6 +38,7 @@ def compute_features(inputSfMData, modelName, numKeypoints, outputFolder, rangeI
         inputSfMData (str): Path to the input SfM data file.
         modelName (str): LoMa preset name.
         numKeypoints (int): Number of keypoints to detect per image.
+        detectorResolution (int): Longest side of the image given to the detector.
         outputFolder (str): Output directory.
         rangeIteration (int): Index of the current processing block.
         rangeBlocksCount (int): Total number of processing blocks.
@@ -62,7 +63,7 @@ def compute_features(inputSfMData, modelName, numKeypoints, outputFolder, rangeI
 
         pil_im = load_image_to_pil(info.path)
         W, H = pil_im.size
-        detectorImage, descriptorImage = prepare_images(pil_im, model)
+        detectorImage, descriptorImage = prepare_images(pil_im, model, detectorResolution)
 
         with torch.inference_mode():
             keypoints = model._detector.detect(detectorImage, num_keypoints=numKeypoints)["keypoints"]
@@ -91,6 +92,7 @@ if __name__ == '__main__':
     parser.add_argument('--inputSfMData', type=str, help='')
     parser.add_argument('--model', type=str, help='', default="loma_B")
     parser.add_argument('--numKeypoints', type=int, help='', default=2048)
+    parser.add_argument('--detectorResolution', type=int, help='', default=1024)
     parser.add_argument('--output', type=str, help='')
     parser.add_argument('--rangeIteration', type=int, help='', default=0)
     parser.add_argument('--rangeBlocksCount', type=int, help='', default=1)
@@ -102,6 +104,7 @@ if __name__ == '__main__':
         args.func(inputSfMData=args.inputSfMData,
                   modelName=args.model,
                   numKeypoints=args.numKeypoints,
+                  detectorResolution=args.detectorResolution,
                   outputFolder=args.output,
                   rangeIteration=args.rangeIteration,
                   rangeBlocksCount=args.rangeBlocksCount)
