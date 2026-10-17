@@ -14,7 +14,7 @@ class LomaFeatureMatching(desc.CommandLineNode):
     size = avpar.DynamicViewsSize('inputSfMData')
     gpu = desc.Level.INTENSIVE
 
-    parallelization = desc.Parallelization(blockSize=200)
+    parallelization = desc.Parallelization(blockSize=40)
     commandLineRange = "--rangeIteration {rangeIteration} --rangeBlocksCount {rangeBlocksCount}"
 
     exePath = (Path(__file__).absolute().parent.parent.parent / "python" / "featureMatching.py").as_posix()

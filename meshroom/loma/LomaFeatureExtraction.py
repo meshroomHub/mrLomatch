@@ -1,4 +1,4 @@
-__version__ = "1.1"
+__version__ = "1.2"
 
 from pathlib import Path
 from meshroom.core import desc
@@ -27,6 +27,27 @@ class LomaFeatureExtraction(desc.CommandLineNode):
             label="SfMData",
             description="Input SfMData file.",
             value="",
+        ),
+        desc.ListAttribute(
+            name="masksFolders",
+            label="Masks Folders",
+            description="List of folders where mask files can be looked up (same filename as the image).\n"
+                        "Features located where the mask is 0 are removed.",
+            elementDesc=desc.File(
+                name="masksFolder",
+                label="Masks Folder",
+                description="",
+                value="",
+            ),
+            exposed=True,
+        ),
+        desc.ChoiceParam(
+            name="masksExtension",
+            label="Mask File Extension",
+            description="Mask file extension.",
+            value="exr",
+            values=["exr", "png", "jpg"],
+            exclusive=True,
         ),
         desc.ChoiceParam(
             name="model",

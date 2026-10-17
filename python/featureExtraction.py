@@ -1,5 +1,6 @@
 from pyalicevision import feature as avfeat
 from pyalicevision import system as avsys
+from pyalicevision import image as avimage
 
 from loma.loma import to_pixel_coords
 
@@ -25,7 +26,63 @@ def save_features(outputFolder, viewId, pixelCoords):
 
     regions.Save(f"{outputFolder}/{viewId}.roma.feat", f"{outputFolder}/{viewId}.roma.desc")
 
-def compute_features(inputSfMData, modelName, numKeypoints, detectorResolution, outputFolder, rangeIteration, rangeBlocksCount):
+def parse_masks_folders(masksFolders):
+    """
+    Normalise the masks-folder argument into a deduplicated list of non-empty path strings.
+    """
+    if masksFolders is None:
+        return []
+    if isinstance(masksFolders, str):
+        masksFolders = [masksFolders]
+
+    folders = []
+    for folder in masksFolders:
+        folder = folder.strip()
+        if folder and folder not in folders:
+            folders.append(folder)
+    return folders
+
+def load_mask(masksFolders, masksExtension, imagePath, width, height):
+    """
+    Load the mask of an image, looking for '<imageName>.<ext>' in each masks folder
+    (same convention as MatchMasking). If several masks are found, they are combined (minimum).
+
+    Returns:
+    a (height, width) numpy array, or None if no mask is found.
+    """
+    stem = os.path.splitext(os.path.basename(imagePath))[0]
+    mask = None
+
+    for folder in masksFolders:
+        maskPath = os.path.join(folder, f"{stem}.{masksExtension}")
+        if not os.path.exists(maskPath):
+            continue
+
+        logging.info(f"Found mask at {maskPath}")
+        maskLarge = avimage.Image_uchar()
+        avimage.readImage(maskPath, maskLarge, avimage.ImageReadOptions(avimage.EImageColorSpace_NO_CONVERSION))
+        maskResized = avimage.Image_uchar()
+        avimage.resampleImage(width, height, maskLarge, maskResized, False)
+        current = np.squeeze(maskResized.getNumpyArray())
+        mask = current if mask is None else np.minimum(mask, current)
+
+    return mask
+
+def unmasked_indices(pixelCoords, mask):
+    """
+    Indices of the keypoints which are not masked (mask value is not 0).
+    Keypoints outside of the mask are kept.
+    """
+    x = pixelCoords[:, 0].astype(np.int64)
+    y = pixelCoords[:, 1].astype(np.int64)
+    inside = (x >= 0) & (y >= 0) & (x < mask.shape[1]) & (y < mask.shape[0])
+
+    masked = np.zeros(len(pixelCoords), dtype=bool)
+    masked[inside] = mask[y[inside], x[inside]] == 0
+
+    return np.nonzero(~masked)[0]
+
+def compute_features(inputSfMData, modelName, numKeypoints, detectorResolution, masksFolders, masksExtension, outputFolder, rangeIteration, rangeBlocksCount):
     """
     Detect and describe LoMa keypoints for each view of the sfmData.
 
@@ -39,6 +96,8 @@ def compute_features(inputSfMData, modelName, numKeypoints, detectorResolution, 
         modelName (str): LoMa preset name.
         numKeypoints (int): Number of keypoints to detect per image.
         detectorResolution (int): Longest side of the image given to the detector.
+        masksFolders (list[str]): Folders containing masks used to filter features (optional).
+        masksExtension (str): File extension of the masks.
         outputFolder (str): Output directory.
         rangeIteration (int): Index of the current processing block.
         rangeBlocksCount (int): Total number of processing blocks.
@@ -53,6 +112,8 @@ def compute_features(inputSfMData, modelName, numKeypoints, detectorResolution, 
 
     viewIds = viewIds[rangeStart:rangeEnd]
     logging.info(f"Processing views {rangeStart} to {rangeEnd}")
+
+    masksFolders = parse_masks_folders(masksFolders)
 
     logging.info(f"Loading model {modelName}")
     model = load_model(modelName)
@@ -69,13 +130,25 @@ def compute_features(inputSfMData, modelName, numKeypoints, detectorResolution, 
             keypoints = model._detector.detect(detectorImage, num_keypoints=numKeypoints)["keypoints"]
             descriptions = model._descriptor.describe_keypoints(descriptorImage, keypoints)["descriptions"]
 
-        pixelCoords = to_pixel_coords(keypoints[0], H, W).cpu().numpy()
+        keypoints = keypoints[0]
+        descriptions = descriptions[0]
+        pixelCoords = to_pixel_coords(keypoints, H, W).cpu().numpy()
+
+        mask = load_mask(masksFolders, masksExtension, info.path, W, H)
+        if mask is not None:
+            selected = unmasked_indices(pixelCoords, mask)
+            logging.info(f"Mask removed {pixelCoords.shape[0] - len(selected)} features")
+            pixelCoords = pixelCoords[selected]
+            selected = torch.from_numpy(selected).to(keypoints.device)
+            keypoints = keypoints[selected]
+            descriptions = descriptions[selected]
+
         save_features(outputFolder, viewId, pixelCoords)
 
         np.savez(
             os.path.join(outputFolder, f"{viewId}.loma.npz"),
-            keypoints=keypoints[0].float().cpu().numpy(),
-            descriptions=descriptions[0].half().cpu().numpy(),
+            keypoints=keypoints.float().cpu().numpy(),
+            descriptions=descriptions.half().cpu().numpy(),
             model=modelName,
         )
 
@@ -93,6 +166,8 @@ if __name__ == '__main__':
     parser.add_argument('--model', type=str, help='', default="loma_B")
     parser.add_argument('--numKeypoints', type=int, help='', default=2048)
     parser.add_argument('--detectorResolution', type=int, help='', default=1024)
+    parser.add_argument('--masksFolders', nargs='*', default=None, help='')
+    parser.add_argument('--masksExtension', type=str, help='', default="exr")
     parser.add_argument('--output', type=str, help='')
     parser.add_argument('--rangeIteration', type=int, help='', default=0)
     parser.add_argument('--rangeBlocksCount', type=int, help='', default=1)
@@ -105,6 +180,8 @@ if __name__ == '__main__':
                   modelName=args.model,
                   numKeypoints=args.numKeypoints,
                   detectorResolution=args.detectorResolution,
+                  masksFolders=args.masksFolders,
+                  masksExtension=args.masksExtension,
                   outputFolder=args.output,
                   rangeIteration=args.rangeIteration,
                   rangeBlocksCount=args.rangeBlocksCount)
