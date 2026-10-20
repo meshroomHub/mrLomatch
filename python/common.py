@@ -3,6 +3,7 @@ from pyalicevision import sfmData as avsfmData
 from pyalicevision import sfmDataIO as avsfmDataIO
 
 import argparse
+import logging
 import numpy as np
 import torch
 from PIL import Image
@@ -51,10 +52,11 @@ def get_imageinfos_from_sfmdata(inputSfMData):
 
     return infos
 
-def load_model(modelName):
+def load_model(modelName, compile=False):
     """
     Create a LoMa model given its preset name (loma_B128, loma_B, loma_L, loma_G, loma_R).
     Weights are downloaded by torch.hub if not already in cache.
+    If compile is set, the matcher is compiled with torch.compile on its first call.
     """
     from loma import LoMa, LoMaB, LoMaB128, LoMaL, LoMaG, LoMaR
 
@@ -69,7 +71,16 @@ def load_model(modelName):
     if modelName not in presets:
         raise RuntimeError(f"Unknown LoMa model {modelName}")
 
-    return LoMa(presets[modelName]())
+    if compile:
+        # Triton (used by torch.compile on GPU) needs compute capability 7.0+
+        if device.type == "cuda" and torch.cuda.get_device_capability() < (7, 0):
+            logging.warning("GPU compute capability below 7.0, torch.compile disabled")
+            compile = False
+        else:
+            # Fall back to eager execution if compilation fails at runtime
+            torch._dynamo.config.suppress_errors = True
+
+    return LoMa(presets[modelName](compile=compile))
 
 def load_image_to_pil(path):
     """ Load an image using pyalicevision (supports all AliceVision formats)

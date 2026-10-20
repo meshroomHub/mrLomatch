@@ -72,7 +72,7 @@ def compute_matches(inputSfMData, featuresFolder, imagePairsList, filterThreshol
         modelName = modelNames.pop()
 
         logging.info(f"Loading model {modelName}")
-        model = load_model(modelName)
+        model = load_model(modelName, compile=True)
 
         for (referenceId, otherId) in pairsToProcess:
             kA, dA = features[referenceId]
