@@ -1,4 +1,4 @@
-__version__ = "1.2"
+__version__ = "1.3"
 
 from pathlib import Path
 from meshroom.core import desc
@@ -71,6 +71,14 @@ class LomaFeatureExtraction(desc.CommandLineNode):
                         "Higher values give more accurate keypoints at a higher GPU memory cost. Descriptors are always computed at 784x784.",
             value=1024,
             range=(512, 8192, 256),
+        ),
+        desc.IntParam(
+            name="nmsSize",
+            label="NMS Size",
+            description="Size of the non-maximum suppression window of the keypoint detector, in detector pixels (must be odd).\n"
+                        "Larger values prevent close keypoints, which reduces the conflicts when building tracks.",
+            value=3,
+            range=(1, 15, 2),
         ),
     ]
 

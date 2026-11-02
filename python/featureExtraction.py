@@ -82,7 +82,7 @@ def unmasked_indices(pixelCoords, mask):
 
     return np.nonzero(~masked)[0]
 
-def compute_features(inputSfMData, modelName, numKeypoints, detectorResolution, masksFolders, masksExtension, outputFolder, rangeIteration, rangeBlocksCount):
+def compute_features(inputSfMData, modelName, numKeypoints, detectorResolution, nmsSize, masksFolders, masksExtension, outputFolder, rangeIteration, rangeBlocksCount):
     """
     Detect and describe LoMa keypoints for each view of the sfmData.
 
@@ -96,6 +96,7 @@ def compute_features(inputSfMData, modelName, numKeypoints, detectorResolution, 
         modelName (str): LoMa preset name.
         numKeypoints (int): Number of keypoints to detect per image.
         detectorResolution (int): Longest side of the image given to the detector.
+        nmsSize (int): Non-maximum suppression window size of the detector (odd, in detector pixels).
         masksFolders (list[str]): Folders containing masks used to filter features (optional).
         masksExtension (str): File extension of the masks.
         outputFolder (str): Output directory.
@@ -117,6 +118,10 @@ def compute_features(inputSfMData, modelName, numKeypoints, detectorResolution, 
 
     logging.info(f"Loading model {modelName}")
     model = load_model(modelName)
+
+    if nmsSize % 2 == 0:
+        raise RuntimeError(f"NMS size must be odd, got {nmsSize}")
+    model._detector.nms_size = nmsSize
 
     for viewId in viewIds:
         info = iinfos[viewId]
@@ -166,6 +171,7 @@ if __name__ == '__main__':
     parser.add_argument('--model', type=str, help='', default="loma_B")
     parser.add_argument('--numKeypoints', type=int, help='', default=2048)
     parser.add_argument('--detectorResolution', type=int, help='', default=1024)
+    parser.add_argument('--nmsSize', type=int, help='', default=3)
     parser.add_argument('--masksFolders', nargs='*', default=None, help='')
     parser.add_argument('--masksExtension', type=str, help='', default="exr")
     parser.add_argument('--output', type=str, help='')
@@ -180,6 +186,7 @@ if __name__ == '__main__':
                   modelName=args.model,
                   numKeypoints=args.numKeypoints,
                   detectorResolution=args.detectorResolution,
+                  nmsSize=args.nmsSize,
                   masksFolders=args.masksFolders,
                   masksExtension=args.masksExtension,
                   outputFolder=args.output,
