@@ -11,10 +11,10 @@ class LomaFeatureMatching(desc.CommandLineNode):
     Match the features computed by LomaFeatureExtraction on a list of image pairs using the LoMa matcher.
     The model used is the one used for extraction.
     """
-    size = avpar.DynamicViewsSize('inputSfMData')
+    size = avpar.DynamicImagePairsSize('imagePairsList')
     gpu = desc.Level.INTENSIVE
 
-    parallelization = desc.Parallelization(blockSize=40)
+    parallelization = desc.Parallelization(blockSize=500)
     commandLineRange = "--rangeIteration {rangeIteration} --rangeBlocksCount {rangeBlocksCount}"
 
     exePath = (Path(__file__).absolute().parent.parent.parent / "python" / "featureMatching.py").as_posix()
