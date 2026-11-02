@@ -101,8 +101,6 @@ def compute_matches(inputSfMData, featuresFolder, imagePairsList, filterThreshol
 if __name__ == '__main__':
     import argparse
 
-    logging.basicConfig(format='[%(asctime)s][%(levelname)s] %(message)s', level=logging.INFO)
-
     parser = argparse.ArgumentParser(prog='lomaFeatureMatching')
 
     parser.add_argument('--inputSfMData', type=str, help='')
@@ -110,11 +108,16 @@ if __name__ == '__main__':
     parser.add_argument('--imagePairsList', type=str, help='')
     parser.add_argument('--filterThreshold', type=float, help='', default=0.1)
     parser.add_argument('--output', type=str, help='')
+    parser.add_argument('--verboseLevel', type=str, help='', default="info",
+                        choices=["fatal", "error", "warning", "info", "debug", "trace"])
     parser.add_argument('--rangeIteration', type=int, help='', default=0)
     parser.add_argument('--rangeBlocksCount', type=int, help='', default=1)
     parser.set_defaults(func=compute_matches)
 
     args = parser.parse_args()
+
+    logging.basicConfig(format='[%(asctime)s][%(levelname)s] %(message)s',
+                        level="DEBUG" if args.verboseLevel == "trace" else args.verboseLevel.upper())
 
     if hasattr(args, 'func'):
         args.func(inputSfMData=args.inputSfMData,

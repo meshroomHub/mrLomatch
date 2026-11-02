@@ -154,15 +154,18 @@ def compute_tracks_cleaning(matchesFolders, outputFolder):
 if __name__ == '__main__':
     import argparse
 
-    logging.basicConfig(format='[%(asctime)s][%(levelname)s] %(message)s', level=logging.INFO)
-
     parser = argparse.ArgumentParser(prog='lomaTracksCleaning')
 
     parser.add_argument('--matchesFolders', nargs='*', default=[], help='')
     parser.add_argument('--output', type=str, help='')
+    parser.add_argument('--verboseLevel', type=str, help='', default="info",
+                        choices=["fatal", "error", "warning", "info", "debug", "trace"])
     parser.set_defaults(func=compute_tracks_cleaning)
 
     args = parser.parse_args()
+
+    logging.basicConfig(format='[%(asctime)s][%(levelname)s] %(message)s',
+                        level="DEBUG" if args.verboseLevel == "trace" else args.verboseLevel.upper())
 
     if hasattr(args, 'func'):
         args.func(matchesFolders=args.matchesFolders,

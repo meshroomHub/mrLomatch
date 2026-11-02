@@ -163,8 +163,6 @@ def compute_features(inputSfMData, modelName, numKeypoints, detectorResolution, 
 if __name__ == '__main__':
     import argparse
 
-    logging.basicConfig(format='[%(asctime)s][%(levelname)s] %(message)s', level=logging.INFO)
-
     parser = argparse.ArgumentParser(prog='lomaFeatureExtraction')
 
     parser.add_argument('--inputSfMData', type=str, help='')
@@ -175,11 +173,16 @@ if __name__ == '__main__':
     parser.add_argument('--masksFolders', nargs='*', default=None, help='')
     parser.add_argument('--masksExtension', type=str, help='', default="exr")
     parser.add_argument('--output', type=str, help='')
+    parser.add_argument('--verboseLevel', type=str, help='', default="info",
+                        choices=["fatal", "error", "warning", "info", "debug", "trace"])
     parser.add_argument('--rangeIteration', type=int, help='', default=0)
     parser.add_argument('--rangeBlocksCount', type=int, help='', default=1)
     parser.set_defaults(func=compute_features)
 
     args = parser.parse_args()
+
+    logging.basicConfig(format='[%(asctime)s][%(levelname)s] %(message)s',
+                        level="DEBUG" if args.verboseLevel == "trace" else args.verboseLevel.upper())
 
     if hasattr(args, 'func'):
         args.func(inputSfMData=args.inputSfMData,

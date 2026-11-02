@@ -2,6 +2,7 @@ __version__ = "1.0"
 
 from pathlib import Path
 from meshroom.core import desc
+from meshroom.core.utils import VERBOSE_LEVEL
 from pyalicevision import parallelization as avpar
 
 class LomaFeatureMatching(desc.CommandLineNode):
@@ -46,6 +47,13 @@ class LomaFeatureMatching(desc.CommandLineNode):
             description="Minimal match score to keep a match.",
             value=0.1,
             range=(0.0, 1.0, 0.01),
+        ),
+        desc.ChoiceParam(
+            name="verboseLevel",
+            label="Verbose Level",
+            description="Verbosity level (fatal, error, warning, info, debug, trace).",
+            values=VERBOSE_LEVEL,
+            value="info",
         ),
     ]
 

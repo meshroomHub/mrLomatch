@@ -2,6 +2,7 @@ __version__ = "1.0"
 
 from pathlib import Path
 from meshroom.core import desc
+from meshroom.core.utils import VERBOSE_LEVEL
 
 class LomaTracksCleaning(desc.CommandLineNode):
 
@@ -30,6 +31,13 @@ class LomaTracksCleaning(desc.CommandLineNode):
                 value="",
             ),
             exposed=True,
+        ),
+        desc.ChoiceParam(
+            name="verboseLevel",
+            label="Verbose Level",
+            description="Verbosity level (fatal, error, warning, info, debug, trace).",
+            values=VERBOSE_LEVEL,
+            value="info",
         ),
     ]
 
