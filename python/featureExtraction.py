@@ -7,22 +7,33 @@ from loma.loma import to_pixel_coords
 from common import *
 
 import os
+import math
 import logging
 
 
-def save_features(outputFolder, viewId, pixelCoords):
+def detector_scale(width, height, detectorWidth, detectorHeight):
     """
-    Save the keypoints as AliceVision 'roma' features (positions only, dummy descriptors).
+    Scale of the features, as in mrRomatch: log2 of the downscale factor
+    between the original image and the image given to the detector, at least 0.
+    """
+    wscale = math.log(float(width) / float(detectorWidth), 2)
+    hscale = math.log(float(height) / float(detectorHeight), 2)
+    return max(wscale, hscale, 0.0)
+
+def save_features(outputFolder, viewId, pixelCoords, scale):
+    """
+    Save the keypoints as AliceVision 'roma' features (positions and scale, dummy descriptors).
 
     Args:
         outputFolder (str): output directory.
         viewId (int): view identifier.
         pixelCoords (numpy.ndarray): (N, 2) keypoints in original image pixel coordinates.
+        scale (float): scale of the features (see detector_scale).
     """
     regions = avfeat.RomaRegions()
     for coord in pixelCoords:
         regions.Descriptors().append(avfeat.RomaDescriptor())
-        regions.Features().append(avfeat.PointFeature(float(coord[0]), float(coord[1]), 1.0, 0.0))
+        regions.Features().append(avfeat.PointFeature(float(coord[0]), float(coord[1]), float(scale), 0.0))
 
     regions.Save(f"{outputFolder}/{viewId}.roma.feat", f"{outputFolder}/{viewId}.roma.desc")
 
@@ -130,6 +141,7 @@ def compute_features(inputSfMData, modelName, numKeypoints, detectorResolution, 
         pil_im = load_image_to_pil(info.path)
         W, H = pil_im.size
         detectorImage, descriptorImage = prepare_images(pil_im, model, detectorResolution)
+        scale = detector_scale(W, H, detectorImage.shape[-1], detectorImage.shape[-2])
 
         with torch.inference_mode():
             keypoints = model._detector.detect(detectorImage, num_keypoints=numKeypoints)["keypoints"]
@@ -148,7 +160,7 @@ def compute_features(inputSfMData, modelName, numKeypoints, detectorResolution, 
             keypoints = keypoints[selected]
             descriptions = descriptions[selected]
 
-        save_features(outputFolder, viewId, pixelCoords)
+        save_features(outputFolder, viewId, pixelCoords, scale)
 
         np.savez(
             os.path.join(outputFolder, f"{viewId}.loma.npz"),
