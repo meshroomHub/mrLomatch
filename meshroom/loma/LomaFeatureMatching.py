@@ -1,4 +1,4 @@
-__version__ = "1.0"
+__version__ = "2.0"
 
 from pathlib import Path
 from meshroom.core import desc
@@ -29,11 +29,18 @@ class LomaFeatureMatching(desc.CommandLineNode):
             description="Input SfMData file.",
             value="",
         ),
-        desc.File(
-            name="featuresFolder",
-            label="Features Folder",
-            description="Output folder of LomaFeatureExtraction.",
-            value="",
+        desc.ListAttribute(
+            name="featuresFolders",
+            label="Features Folders",
+            description="Output folders of LomaFeatureExtraction.\n"
+                        "Each view's features are read from the first folder containing them.",
+            elementDesc=desc.File(
+                name="featuresFolder",
+                label="Features Folder",
+                description="",
+                value="",
+            ),
+            exposed=True,
         ),
         desc.File(
             name="imagePairsList",

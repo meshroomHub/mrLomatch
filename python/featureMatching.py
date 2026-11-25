@@ -10,25 +10,31 @@ import os
 import logging
 
 
-def load_view_features(featuresFolder, viewId):
+def load_view_features(featuresFolders, viewId):
     """
     Load the LoMa keypoints/descriptors written by LomaFeatureExtraction.
+    The features are read from the first folder containing them.
 
     Returns:
         (keypoints tensor (N, 2), descriptions tensor (N, D), model name)
     """
-    data = np.load(os.path.join(featuresFolder, f"{viewId}.loma.npz"))
+    filename = f"{viewId}.loma.npz"
+    path = next((os.path.join(folder, filename) for folder in featuresFolders
+                 if os.path.isfile(os.path.join(folder, filename))), None)
+    if path is None:
+        raise RuntimeError(f"Features of view {viewId} not found in {featuresFolders}")
+    data = np.load(path)
     keypoints = torch.from_numpy(data["keypoints"])
     descriptions = torch.from_numpy(data["descriptions"].astype(np.float32))
     return keypoints, descriptions, str(data["model"])
 
-def compute_matches(inputSfMData, featuresFolder, imagePairsList, filterThreshold, matchesFolder, rangeIteration, rangeBlocksCount):
+def compute_matches(inputSfMData, featuresFolders, imagePairsList, filterThreshold, matchesFolder, rangeIteration, rangeBlocksCount):
     """
     Match LoMa features on a list of image pairs and save AliceVision matches.
 
     Args:
         inputSfMData (str): Path to the input SfM data file.
-        featuresFolder (str): Output folder of LomaFeatureExtraction.
+        featuresFolders (list of str): Output folders of LomaFeatureExtraction.
         imagePairsList (str): Path to the file listing image pairs to process.
         filterThreshold (float): Minimal match score.
         matchesFolder (str): Output directory for match files.
@@ -60,7 +66,7 @@ def compute_matches(inputSfMData, featuresFolder, imagePairsList, filterThreshol
     features = dict()
     modelNames = set()
     for viewId in viewIds:
-        keypoints, descriptions, modelName = load_view_features(featuresFolder, viewId)
+        keypoints, descriptions, modelName = load_view_features(featuresFolders, viewId)
         features[viewId] = (keypoints, descriptions)
         modelNames.add(modelName)
 
@@ -104,7 +110,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(prog='lomaFeatureMatching')
 
     parser.add_argument('--inputSfMData', type=str, help='')
-    parser.add_argument('--featuresFolder', type=str, help='')
+    parser.add_argument('--featuresFolders', nargs='+', help='')
     parser.add_argument('--imagePairsList', type=str, help='')
     parser.add_argument('--filterThreshold', type=float, help='', default=0.1)
     parser.add_argument('--output', type=str, help='')
@@ -121,7 +127,7 @@ if __name__ == '__main__':
 
     if hasattr(args, 'func'):
         args.func(inputSfMData=args.inputSfMData,
-                  featuresFolder=args.featuresFolder,
+                  featuresFolders=args.featuresFolders,
                   imagePairsList=args.imagePairsList,
                   filterThreshold=args.filterThreshold,
                   matchesFolder=args.output,
