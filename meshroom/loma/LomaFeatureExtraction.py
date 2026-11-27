@@ -2,7 +2,7 @@ __version__ = "1.3"
 
 from pathlib import Path
 from meshroom.core import desc
-from meshroom.core.utils import VERBOSE_LEVEL
+from meshroom.core.utils import DESCRIBER_TYPES, VERBOSE_LEVEL
 from pyalicevision import parallelization as avpar
 
 class LomaFeatureExtraction(desc.CommandLineNode):
@@ -80,6 +80,16 @@ class LomaFeatureExtraction(desc.CommandLineNode):
                         "Larger values prevent close keypoints, which reduces the conflicts when building tracks.",
             value=3,
             range=(1, 15, 2),
+        ),
+        desc.ChoiceParam(
+            name="describerTypes",
+            label="Describer Types",
+            description="Describer types used to describe an image.",
+            values=DESCRIBER_TYPES,
+            value=["roma"],
+            exclusive=False,
+            joinChar=",",
+            commandLineGroup="ignored"
         ),
         desc.ChoiceParam(
             name="verboseLevel",

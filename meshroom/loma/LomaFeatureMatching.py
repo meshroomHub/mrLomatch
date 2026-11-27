@@ -2,7 +2,7 @@ __version__ = "2.0"
 
 from pathlib import Path
 from meshroom.core import desc
-from meshroom.core.utils import VERBOSE_LEVEL
+from meshroom.core.utils import DESCRIBER_TYPES, VERBOSE_LEVEL
 from pyalicevision import parallelization as avpar
 
 class LomaFeatureMatching(desc.CommandLineNode):
@@ -54,6 +54,16 @@ class LomaFeatureMatching(desc.CommandLineNode):
             description="Minimal match score to keep a match.",
             value=0.1,
             range=(0.0, 1.0, 0.01),
+        ),
+        desc.ChoiceParam(
+            name="describerTypes",
+            label="Describer Types",
+            description="Describer types used to describe an image.",
+            values=DESCRIBER_TYPES,
+            value=["roma"],
+            exclusive=False,
+            joinChar=",",
+            commandLineGroup="ignored"
         ),
         desc.ChoiceParam(
             name="verboseLevel",

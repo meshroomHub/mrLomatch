@@ -2,7 +2,7 @@ __version__ = "1.0"
 
 from pathlib import Path
 from meshroom.core import desc
-from meshroom.core.utils import VERBOSE_LEVEL
+from meshroom.core.utils import DESCRIBER_TYPES, VERBOSE_LEVEL
 
 class LomaTracksCleaning(desc.CommandLineNode):
 
@@ -31,6 +31,16 @@ class LomaTracksCleaning(desc.CommandLineNode):
                 value="",
             ),
             exposed=True,
+        ),
+        desc.ChoiceParam(
+            name="describerTypes",
+            label="Describer Types",
+            description="Describer types used to describe an image.",
+            values=DESCRIBER_TYPES,
+            value=["roma"],
+            exclusive=False,
+            joinChar=",",
+            commandLineGroup="ignored"
         ),
         desc.ChoiceParam(
             name="verboseLevel",
