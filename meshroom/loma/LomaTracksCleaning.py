@@ -33,16 +33,6 @@ class LomaTracksCleaning(desc.CommandLineNode):
             exposed=True,
         ),
         desc.ChoiceParam(
-            name="describerTypes",
-            label="Describer Types",
-            description="Describer types used to describe an image.",
-            values=DESCRIBER_TYPES,
-            value=["roma"],
-            exclusive=False,
-            joinChar=",",
-            commandLineGroup="ignored"
-        ),
-        desc.ChoiceParam(
             name="verboseLevel",
             label="Verbose Level",
             description="Verbosity level (fatal, error, warning, info, debug, trace).",
@@ -57,5 +47,15 @@ class LomaTracksCleaning(desc.CommandLineNode):
             label="Matches Folder",
             description="Output folder for cleaned matches.",
             value="{nodeCacheFolder}",
+        ),
+        desc.ChoiceParam(
+            name="describerTypes",
+            label="Describer Types",
+            description="Describer types used to describe an image.",
+            values=DESCRIBER_TYPES,
+            value=["roma"],
+            exclusive=False,
+            joinChar=",",
+            commandLineGroup="ignored"
         ),
     ]

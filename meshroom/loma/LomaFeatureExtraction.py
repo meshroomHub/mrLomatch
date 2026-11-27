@@ -82,16 +82,6 @@ class LomaFeatureExtraction(desc.CommandLineNode):
             range=(1, 15, 2),
         ),
         desc.ChoiceParam(
-            name="describerTypes",
-            label="Describer Types",
-            description="Describer types used to describe an image.",
-            values=DESCRIBER_TYPES,
-            value=["roma"],
-            exclusive=False,
-            joinChar=",",
-            commandLineGroup="ignored"
-        ),
-        desc.ChoiceParam(
             name="verboseLevel",
             label="Verbose Level",
             description="Verbosity level (fatal, error, warning, info, debug, trace).",
@@ -106,5 +96,15 @@ class LomaFeatureExtraction(desc.CommandLineNode):
             label="Features Folder",
             description="Output folder for features and LoMa descriptors.",
             value="{nodeCacheFolder}",
+        ),
+        desc.ChoiceParam(
+            name="describerTypes",
+            label="Describer Types",
+            description="Describer types used to describe an image.",
+            values=DESCRIBER_TYPES,
+            value=["roma"],
+            exclusive=False,
+            joinChar=",",
+            commandLineGroup="ignored"
         ),
     ]
